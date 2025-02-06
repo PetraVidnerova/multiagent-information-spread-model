@@ -1,15 +1,11 @@
 # Epicity &ndash; Model M
 
-Model M is an agent-based epidemic model for COVID-19 computational experiments on realistic multi-graph social
-networks. It allows to simulate projections of main epidemic indicators with respect to various interventions. These
-include lockdowns, closures of different contact layers (leisure, schools, etc.), social distancing, testing and
-quarantine, contact tracing, and vaccination.
+
 
 <!--- PDF BREAK -->
 
 #### Model M schema
 
-![schema](doc/fig/schema.svg)
 
 For technical details see the [model documentation](doc/model.md).
 
@@ -161,34 +157,8 @@ Please consult [How to run simulations](doc/run.md) for options of individual sc
 
 ## Acknowledgement
 
-We would like to thank the company Seznam.cz, a.s., division Firmy.cz who provided us with the source data for model
-creation (points of interests) free of charge.
-
-The work has been supported by the "City for People, Not for Virus" project No. TL04000282 of the Technology Agency of
-the Czech Republic.
+**TODO**
 
 ## How to cite
 
-If you would like to refer to this software in a publication, please cite the following paper preprint on medrXiv:
-
-Model-M: An agent-based epidemic model of a middle-sized municipality <br>
-Ludek Berec, Tomas Diviak, Ales Kubena, Rene Levinsky, Roman Neruda, Gabriela Suchoparova, Josef Slerka, Martin Smid,
-Jan Trnka, Vit Tucek, Petra Vidnerova, Milan Zajicek, Frantisek Zapletal <br>
-medRxiv 2021.05.13.21257139; doi: https://doi.org/10.1101/2021.05.13.21257139
-
-<pre>
-@article {Berec2021.05.13.21257139,
-	author = {Berec, Ludek and Diviak, Tomas and Kubena, Ales and Levinsky, Rene 
-  and Neruda, Roman and Suchoparova, Gabriela and Slerka, Josef and Smid,  Martin
-  and Trnka, Jan and Tucek, Vit and Vidnerova, Petra and Zajicek, Milan 
-  and Zapletal, Frantisek},
-	title = {Model-M: An agent-based epidemic model of a middle-sized municipality},
-	elocation-id = {2021.05.13.21257139},
-	year = {2021},
-	doi = {10.1101/2021.05.13.21257139},
-	publisher = {Cold Spring Harbor Laboratory Press},
-	URL = {https://www.medrxiv.org/content/10.1101/2021.05.13.21257139v1},
-	eprint = {https://www.medrxiv.org/content/10.1101/2021.05.13.21257139v1.full.pdf},
-	journal = {medRxiv}
-}
-</pre>
+**TODO**
