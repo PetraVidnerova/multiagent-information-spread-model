@@ -1,4 +1,4 @@
-# MultiAgent Information Spred Model 
+# MultiAgent Information Spread Model 
 
 
 
