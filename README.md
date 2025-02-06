@@ -1,4 +1,4 @@
-# Epicity &ndash; Model M
+# MultiAgent Information Spred Model 
 
 
 
@@ -6,6 +6,7 @@
 
 #### Model M schema
 
+**TODO picture of simplier model schema**
 
 For technical details see the [model documentation](doc/model.md).
 
