@@ -46,7 +46,7 @@ class LightGraph:
 
     def read_csv(self,
                  path_to_nodes='p.csv',
-                 path_to_external='e.csv',
+                 path_to_external=None,
                  path_to_layers='etypes.csv',
                  path_to_edges='edges.csv',
                  path_to_quarantine=None,
@@ -57,7 +57,10 @@ class LightGraph:
             path_to_nodes, **csv_hacking).drop_duplicates().reset_index()
         edges = pd.read_csv(path_to_edges, **csv_hacking)
         layers = pd.read_csv(path_to_layers, **csv_hacking)
-        external_nodes = pd.read_csv(path_to_external, **csv_hacking)
+        if path_to_external is not None:
+            external_nodes = pd.read_csv(path_to_external, **csv_hacking)
+        else:
+            external_nodes = pd.DataFrame()
 
         nodes = pd.concat([base_nodes, external_nodes],
                           ignore_index=True).drop(columns=["index"])
