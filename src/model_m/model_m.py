@@ -245,7 +245,7 @@ def load_graph(cf: ConfigFile):
     nodes = cf_graph.get("nodes", "nodes.csv")
     edges = cf_graph.get("edges", "edges.csv")
     layers = cf_graph.get("layers", "etypes.csv")
-    externals = cf_graph.get("externals", "e.csv")
+    externals = cf_graph.get("externals", None)
     quarantine = cf_graph.get("quarantine", None)
     layer_groups = cf_graph.get("layer_groups", None)
 
