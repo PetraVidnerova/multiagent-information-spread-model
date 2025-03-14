@@ -1,0 +1,38 @@
+id,label,sex,age
+0,Chorus,M,61
+1,Romeo,M,18
+2,Juliet,F,13
+3,Lord Montague,M,58
+4,Lady Montague,F,40
+5,Benvolio,M,17
+6,Lord Capulet,M,50
+7,Lady Capulet,F,35
+8,Tybalt,M,17
+9,Prince Escalus,M,60
+10,Paris,M,24
+11,Mercutio,M,20
+12,Nurse,F,28
+13,Peter,M,60
+14,Balthasar,M,23
+15,Abram,M,68
+16,Gregory,M,34
+17,Sampson,M,36
+18,Page,M,11
+19,Friar Lawrence,M,68
+20,Friar John,M,42
+21,Apothacary,M,75
+22,Rosaline,F,16
+23,Queen Mab,F,20
+24,Old Capulet,M,82
+25,Anthony,M,38
+26,Potpan,M,35
+27,Servant 1,M,49
+28,Servant 2,M,31
+29,Ghost Petruchio,M,27
+30,Valentine,M,26
+31,Watchmen 1,M,29
+32,Watchmen 2,M,25
+33,Watchmen 3,M,30
+34,Musician 1,M,39
+35,Musician 2,M,31
+36,Musician 3,M,49
