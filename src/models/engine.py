@@ -117,7 +117,7 @@ class BaseEngine():
         # distribute the states randomly except ext nodes
         if ext_nodes is not None and ext_nodes != 0:
             if not np.all(self.states_history[0][-ext_nodes:] == ext_code):
-                raise "External nodes should go last."
+                raise ValueError("External nodes should go last.")
             np.random.shuffle(self.states_history[0][:-ext_nodes])
         else:
             np.random.shuffle(self.states_history[0])

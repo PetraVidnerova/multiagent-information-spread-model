@@ -5,8 +5,7 @@ import pandas as pd
 import time
 import logging
 
-
-from models.engine import BaseEngine
+from models.simulation_engine import SimulationEngine
 from models.prob_infection import prob_of_contact
 from utils.random_utils import RandomDuration
 from utils.random_utils import gen_tuple
@@ -17,7 +16,7 @@ from utils.global_configs import monitor
 import utils.global_configs as global_configs
 
 
-class SimulationDrivenModel(BaseEngine):
+class SimulationDrivenModel(SimulationEngine):
 
     states = [
         STATES.S,
@@ -34,9 +33,10 @@ class SimulationDrivenModel(BaseEngine):
     ]
 
     num_states = len(states)
-
     state_str_dict = state_codes
+    ext_code = STATES.EXT
 
+    
     transitions = [
         (STATES.S_s,  STATES.E),  # 0
         (STATES.S_s,  STATES.S),  # 1
@@ -110,44 +110,8 @@ class SimulationDrivenModel(BaseEngine):
         "infectious_time": (-1, "time_from first_symptom  - do not setup"),
     }
 
-    common_arguments = {
-        "random_seed": (None, "random seed value"),
-        "start_day": (1, "day to start")
-    }
 
-    def __init__(self, G, **kwargs):
 
-        self.G = G  # backward compatibility
-        self.graph = G
-
-        self.init_kwargs = kwargs
-
-        # 2. model initialization
-        self.inicialization()
-
-        # 3. time and history setup
-        self.setup_series_and_time_keeping()
-
-        # 4. init states and their counts
-        self.states_and_counts_init(ext_nodes=self.num_ext_nodes,
-                                    ext_code=STATES.EXT)
-
-        # 5. set callback to None
-        self.periodic_update_callback = None
-
-        self.T = self.start_day - 1
-
-    def update_graph(self, new_G):
-        if new_G is not None:
-            self.G = new_G  # just for backward compability
-            self.graph = new_G
-            self.num_nodes = self.graph.num_nodes
-            try:
-                self.num_ext_nodes = self.graph.num_nodes - self.graph.num_base_nodes
-            except AttributeError:
-                #  for saved old graph
-                self.num_ext_nodes = 0
-            self.nodes = np.arange(self.graph.number_of_nodes).reshape(-1, 1)
 
     def inicialization(self):
 
@@ -189,73 +153,12 @@ class SimulationDrivenModel(BaseEngine):
             self.MALE: df[self.MALE].to_numpy()
         }
 
-        # #test
-        # nodes = self.graph.nodes[:10]
-        # print(nodes)
-        # age = self.graph.nodes_age[:10]
-        # sex = self.graph.nodes_sex[:10]
-
-        # print(age)
-        # print(sex)
-
-        # probs = np.zeros(len(nodes), dtype=float)
-
-        # male = sex == self.MALE
-        # probs[male] = self.death_probs[self.MALE][age[male]]
-
-        # female = sex == self.FEMALE
-        # probs[female] = self.death_probs[self.FEMALE][age[female]]
-
-        # print(probs)
-
-        # exit()
-
-        # node indexes
-        self.nodes = np.arange(self.graph.num_nodes).reshape(-1, 1)
-        self.num_nodes = self.graph.num_nodes
 
     def setup_series_and_time_keeping(self):
 
         super().setup_series_and_time_keeping()
 
-        self.expected_num_transitions = 10
-        self.expected_num_days = 300
-
-        tseries_len = self.num_transitions * self.num_nodes
-
-        self.tseries = TimeSeries(tseries_len, dtype=float)
-        self.history = TransitionHistory(tseries_len)
-
-        # state history
-        if global_configs.SAVE_NODES:
-            history_len = self.expected_num_days
-        else:
-            history_len = 1
-        self.states_history = TransitionHistory(
-            history_len, width=self.num_nodes)
-
-        if global_configs.SAVE_DURATIONS:
-            self.states_durations = {
-                s: []
-                for s in self.states
-            }
-
-        self.durations = np.zeros(self.num_nodes, dtype=int)
         self.infect_time = np.zeros(self.num_nodes, dtype=int)
-
-        # state_counts ... numbers of inidividuals in given states
-        self.state_counts = {
-            state: TimeSeries(self.expected_num_days, dtype=int)
-            for state in self.states
-        }
-
-        self.state_increments = {
-            state: TimeSeries(self.expected_num_days, dtype=int)
-            for state in self.states
-        }
-
-        # N ... actual number of individuals in population
-        self.N = TimeSeries(self.expected_num_days, dtype=float)
 
         # history of contacts for last 14 days
         self.contact_history = ShortListSeries(14)
@@ -272,13 +175,6 @@ class SimulationDrivenModel(BaseEngine):
     def states_and_counts_init(self, ext_nodes=None, ext_code=None):
         super().states_and_counts_init(ext_nodes, ext_code)
 
-        # time to go until I move to the state state_to_go
-        self.time_to_go = np.full(
-            self.num_nodes, fill_value=-1, dtype="int32").reshape(-1, 1)
-        self.state_to_go = np.full(
-            self.num_nodes, fill_value=-1, dtype="int32").reshape(-1, 1)
-
-        self.current_state = self.states_history[0].copy().reshape(-1, 1)
 
         self.infectious_time = np.full(
             self.num_nodes, fill_value=-1, dtype="int32").reshape(-1, 1)
@@ -293,22 +189,13 @@ class SimulationDrivenModel(BaseEngine):
         self.testable = np.zeros(
             self.num_nodes, dtype=bool)
 
-        # need update = need to recalculate time to go and state_to_go
-        self.need_update = np.ones(self.num_nodes, dtype=bool)
         # need_check - state that needs regular checkup
         self.need_check = np.logical_or(
             self.memberships[STATES.S],
             self.memberships[STATES.S_s]
         )
 
-        # self.time_to_go[(self.memberships[STATES.S] == True).ravel()] = 1
-        # self.state_to_go[(self.memberships[STATES.S] ==
-        #                   True).ravel()] = STATES.S_s
-
-        # self.time_to_go[(self.memberships[STATES.E] == True).ravel()] = 1
-        # self.state_to_go[(self.memberships[STATES.E] ==
-        #                   True).ravel()] = STATES.I_a
-
+        # todo: WTF why we need this?
         index = np.random.randint(37, size=10)
         self.time_to_go[index] = -1
         self.state_to_go[index] = -1
@@ -316,6 +203,7 @@ class SimulationDrivenModel(BaseEngine):
         # move all nodes to S and set move
         self.update_plan(np.ones(self.num_nodes, dtype=bool))
 
+        
     def daily_update(self, nodes):
         """
         Everyday checkup
@@ -359,41 +247,9 @@ class SimulationDrivenModel(BaseEngine):
         self.time_to_go[exposed_mask] = 1
         self.state_to_go[exposed_mask] = STATES.E
 
-    def change_states(self, nodes, target_state=None):
-        """
-        nodes that just entered a new state, update plan
-        """
-        # discard current state
-        self.memberships[:, nodes == True] = 0
-
-    #    print("DBG nodes", nodes == True)
-
-        for node in nodes.nonzero()[0]:
-            # print()
-            # print(self.state_to_go.shape)
-            # print(self.state_to_go)
-            # exit()
-            if target_state is None:
-                new_state = self.state_to_go[node][0]
-            else:
-                new_state = target_state
-            old_state = self.current_state[node, 0]
-            # print(f"{new_state} {new_state.shape}")
-            self.memberships[new_state, node] = 1
-            self.state_counts[new_state][self.t] += 1
-            self.state_counts[old_state][self.t] -= 1
-            self.state_increments[new_state][self.t] += 1
-            if global_configs.SAVE_NODES:
-                self.states_history[self.t][node] = new_state
-
-        if target_state is None:
-            self.current_state[nodes] = self.state_to_go[nodes]
-        else:
-            self.current_state[nodes] = target_state
-        self.update_plan(nodes)
 
     def update_plan(self, nodes):
-        """ This is done for nodes that  just changed thier states.
+        """ This is done for nodes that  just changed their states.
         New plans are generated according the state."""
 
         # update plan
@@ -555,15 +411,6 @@ class SimulationDrivenModel(BaseEngine):
         self.state_to_go[target_nodes] = -1
         self.need_check[target_nodes] = False
 
-    def _get_target_nodes(self, nodes, state):
-        ret = nodes.copy().ravel()
-        is_target_state = self.memberships[state, ret, 0]
-        ret[nodes.flatten()] = is_target_state
-        # ret = np.logical_and(
-        #     self.memberships[state].flatten(),
-        #     nodes.flatten()
-        # )
-        return ret
 
     def run(self, T, print_interval=10, verbose=False):
 
@@ -648,28 +495,6 @@ class SimulationDrivenModel(BaseEngine):
 
         logging.debug("DBG run iteration")
 
-        # memberships check
-        # try:
-        #     assert np.all(self.memberships.sum(axis=0) == 1)
-        # except AssertionError:
-        #     values = self.memberships.sum(axis=0)
-        #     print("AssertionError", values.shape)
-        #     print(values)
-        #     exit()
-        # try:
-        #     assert np.all(self.memberships >= 0)
-        #     assert np.all(self.memberships <= 1)
-        # except AssertionError:
-        #     print("AssertionError", (self.memberships < 0).nonzero())
-        #     exit()
-
-        # for i in range(self.num_nodes):
-        #     its_state = self.current_state[i][0]
-        #     #            print(its_state, type(its_state))
-        #     assert self.memberships[its_state, i] == 1, f"Node {i}: {self.state_str_dict[its_state]}"
-
-        #        print(self.memberships.sum(axis=0))
-
         # prepare
         # add timeseries members
         for state in self.states:
@@ -717,6 +542,7 @@ class SimulationDrivenModel(BaseEngine):
                 assert(d > 0)
                 self.states_durations[s].append(d)
 
+                
     def move_to_R(self, nodes):
         target_nodes = np.zeros(self.num_nodes, dtype=bool)
         target_nodes[nodes] = True
@@ -761,11 +587,6 @@ class SimulationDrivenModel(BaseEngine):
         target_nodes[nodes] = True
         self.change_states(target_nodes, target_state=STATES.E)
 
-    def print(self, verbose=False):
-        print(f"T = {self.T} ({self.t})")
-        if verbose:
-            for state in self.states:
-                print(f"\t {self.state_str_dict[state]} = {self.state_counts[state][self.t]}")
 
     def df_source_infection(self):
         df = pd.DataFrame(index=range(0, self.t))
@@ -774,10 +595,6 @@ class SimulationDrivenModel(BaseEngine):
                 :self.t]
         return df
 
-    def save_durations(self, f):
-        for s in self.states:
-            line = ",".join([str(x) for x in self.states_durations[s]])
-            print(f"{self.state_str_dict[s]},{line}", file=f)
 
     def df_source_nodes(self):
         self.successfull_source_of_infection = self.successfull_source_of_infection[
@@ -791,18 +608,6 @@ class SimulationDrivenModel(BaseEngine):
         df = pd.Series(self.successfull_source_of_infection)
         return df
 
-    def save_node_states(self, filename):
-        if global_configs.SAVE_NODES is False:
-            logging.warning(
-                "Nodes states were not saved, returning empty data frame.")
-            return pd.DataFrame()
-        index = range(0, self.t+1)
-        columns = self.states_history.values
-        df = pd.DataFrame(columns, index=index)
-        df.to_csv(filename)
-        # df = df.replace(self.state_str_dict)
-        # df.to_csv(filename)
-        # print(df)
 
     def die_or_not_to_die(self, target_nodes):
         """ decides whether node dies or not
@@ -841,14 +646,6 @@ class SimulationDrivenModel(BaseEngine):
 
         assert np.all(self.time_to_die[target_nodes, 0] == -1)
         return time_X
-
-    def to_df(self):
-
-        df = super().to_df()
-        if self.start_day != 1:
-            df["day"] = self.start_day + df["day"] - 1
-            df.index = self.start_day + df.index - 1
-        return df
 
     def get_dead(self):
         alld = self.state_counts[STATES.D][-1]
